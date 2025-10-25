@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacBook Pro - Interactive Scroll Demo</title>
+    <!-- Load Tailwind CSS from CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Configure Tailwind to use Inter font and custom colors/settings --><script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'apple-grey': '#f5f5f7',
+                        'apple-dark': '#1d1d1f',
+                        'apple-blue': '#0070c9',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom CSS to mimic Apple's ultra-large, thin header text */
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 5rem);
+            line-height: 1.05;
+            font-weight: 600;
+        }
+        .feature-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            line-height: 1.1;
+            font-weight: 700;
+        }
+        /* Ensure smooth transitions on interactive elements that are *not* scroll-controlled */
+        .link-style, .button-style {
+            transition: all 0.3s ease;
+        }
+        
+        /* IMPORTANT: Scroll-controlled elements (M5/XDR) have their transitions removed here */
+        /* This ensures the JavaScript updates the position instantly, eliminating scroll fighting/lag. */
+        #zooming-image-container, 
+        #slogan-text-wrapper, 
+        #xdr-display-img {
+            /* No CSS transition here. JS handles all updates directly for kinetic effect. */
+        }
+    </style>
+</head>
+<body class="bg-black text-white font-sans overflow-x-hidden">
+
+    <!-- 1. Simple Navigation Bar --><header id="mainHeader" class="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-gray-800 transition-colors duration-500">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
+            <div class="text-lg font-bold"></div>
+            <div class="hidden md:flex space-x-8 text-xs text-gray-300">
+                <a href="#" class="hover:text-white">Store</a>
+                <a href="#" class="hover:text-white">Mac</a>
+                <a href="#" class="hover:text-white">iPad</a>
+                <a href="#" class="hover:text-white">iPhone</a>
+                <a href="#" class="hover:text-white">Support</a>
+            </div>
+            <div class="flex space-x-4 text-sm">
+                <!-- Icons --><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 2. Hero Section - Initial Fade In Effect --><section class="min-h-screen flex flex-col justify-center items-center text-center pt-24 pb-16 px-4">
+        
+        <p id="heroSubtitle" class="text-apple-blue uppercase tracking-widest text-sm font-medium mb-3 opacity-0 translate-y-4 transition-all duration-700 ease-out">New</p>
+        
+        <h1 id="heroTitle" class="hero-title text-transparent bg-clip-text bg-gradient-to-t from-gray-400 to-white mb-6 opacity-0 translate-y-10 transition-all duration-1000 ease-out">
+            MacBook Pro
+        </h1>
+        
+        <h2 id="heroH2" class="text-4xl sm:text-5xl font-bold max-w-4xl tracking-tighter mb-8 opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-200">
+            The power to create the future.
+        </h2>
+        
+        <div id="heroActions" class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-8 items-center opacity-0 translate-y-10 transition-all duration-1000 ease-out delay-500">
+            <a href="#" class="button-style bg-apple-blue text-white py-2 px-6 rounded-full text-lg font-semibold hover:bg-blue-600">Buy</a>
+            <a href="#" class="link-style text-apple-blue text-lg font-medium hover:underline flex items-center group">
+                Watch the film
+                <svg class="w-4 h-4 ml-2 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+        </div>
+        
+        <!-- Slot 1: Main Product Image - URL provided by user --><div id="heroImage" class="mt-16 w-full max-w-6xl px-4 opacity-0 transition-opacity duration-1000 delay-700">
+            <img id="main-product-img"
+                 src="https://global.discourse-cdn.com/mcneel/uploads/default/original/4X/f/6/0/f6029fd96950c4713bb3051a4da666560712f3d4.jpeg" 
+                 alt="MacBook Pro"
+                 onerror="this.onerror=null;this.src='https://placehold.co/1200x600/1e293b/ffffff?text=Image+Load+Failed'"
+                 class="w-full h-auto rounded-xl shadow-2xl border border-gray-700 object-cover" />
+        </div>
+    </section>
+
+    <!-- 2.5. Kinetic Scroll Section - Zoom-Out Effect (M5 Chip) -->
+    <!-- Increased height to 350vh for slower scrolling feel --><section id="scroll-cinematic-container" class="relative h-[350vh] bg-black">
+        <div id="sticky-scene" class="sticky top-0 h-screen overflow-hidden flex items-center justify-center">
+            
+            <!-- Image container that will be scaled by JS --><div id="zooming-image-container" class="absolute w-full h-full flex items-center justify-center pointer-events-none">
+                <img id="m5-chip-image"
+                     src="https://9to5mac.com/wp-content/uploads/sites/6/2025/10/The-most-impressive-thing-about-the-M5-chip-isnt-found-inside-the-MacBook-Pro.jpg?quality=82&strip=all&w=1024"
+                     alt="Apple M5 Chip Architecture"
+                     onerror="this.onerror=null;this.src='https://placehold.co/1200x800/22c55e/ffffff?text=Apple+M5+Chip+Load+Failed'"
+                     class="w-full max-w-5xl h-auto object-contain"
+                     style="mix-blend-mode: lighten;" />
+            </div>
+
+            <!-- Slogan Text with background dimming --><div id="slogan-text-wrapper" class="absolute text-center z-10 opacity-0 px-4">
+                <div class="bg-black/50 backdrop-blur-sm rounded-xl py-4 px-8">
+                    <!-- Applied blue-to-red gradient for primary slogan --><p class="feature-title bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-red-500">New Design. Better Performance.</p>
+                    
+                    <!-- Secondary slogan now also uses the blue-to-red gradient --><p class="text-3xl font-bold mt-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-red-500">The M5 chip redefines mobile architecture.</p>
+                </div>
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- 3. Key Feature Section (M-Series Chip) - Scroll Fade-In --><section data-animate class="py-20 px-4 bg-apple-dark opacity-0 translate-y-12 transition-all duration-1000 ease-out">
+        <div class="max-w-5xl mx-auto text-center">
+            <!-- M4 Update (Adjusted for current reality) --><p class="text-apple-blue text-2xl mb-4 font-semibold">M4 Pro and M4 Max.</p>
+            <h3 class="feature-title max-w-4xl mx-auto text-white mb-12">
+                Pure, Pro Power.
+                Now with even more muscle.
+            </h3>
+
+            <!-- Feature comparison grid --><div class="grid md:grid-cols-2 gap-8 text-left">
+                <!-- M4 Pro Card --><div class="p-8 rounded-xl bg-gray-900/50 shadow-lg border border-gray-800 transition-transform duration-500 hover:scale-[1.02] rounded-2xl">
+                    <h4 class="text-3xl font-bold mb-3 text-apple-blue">M4 Pro</h4>
+                    <p class="text-gray-300 text-lg mb-4">Unprecedented performance for demanding workflows.</p>
+                    <ul class="space-y-2 text-gray-400 text-base">
+                        <li class="flex items-center">
+                            <span class="mr-2 text-green-400">✓</span> Up to 12-core CPU
+                        </li>
+                        <li class="flex items-center">
+                            <span class="mr-2 text-green-400">✓</span> Up to 18-core GPU with Hardware-accelerated ray tracing
+                        </li>
+                        <li class="flex items-center">
+                            <span class="mr-2 text-green-400">✓</span> Up to 36GB Unified Memory
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- M4 Max Card --><div class="p-8 rounded-xl bg-gray-900/50 shadow-lg border border-gray-800 transition-transform duration-500 hover:scale-[1.02] rounded-2xl">
+                    <h4 class="text-3xl font-bold mb-3 text-apple-blue">M4 Max</h4>
+                    <p class="text-gray-300 text-lg mb-4">The ultimate chip for extreme professionals. Maximum throughput.</p>
+                    <ul class="space-y-2 text-gray-400 text-base">
+                        <li class="flex items-center">
+                            <span class="mr-2 text-green-400">✓</span> Up to 16-core CPU
+                        </li>
+                        <li class="flex items-center">
+                            <span class="mr-2 text-green-400">✓</span> Up to 40-core GPU for rendering and gaming
+                        </li>
+                        <li class="flex items-center">
+                            <span class="mr-2 text-green-400">✓</span> Up to 128GB Unified Memory
+                        </di>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 4. Display Feature Section - Kinetic Scroll (Zoom-Out Effect for XDR Display) -->
+    <!-- Increased height to 500vh for slower scrolling feel --><section id="scroll-display-container" class="relative h-[500vh] bg-black pt-20">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <!-- REMOVED opacity-0 and translate-y-12 for instant visibility -->
+            <h3 id="xdr-main-title" class="feature-title text-center mb-4 max-w-4xl mx-auto transition-all duration-1000 ease-out">
+                The world’s best laptop display.
+            </h3>
+            <!-- REMOVED opacity-0 and translate-y-12 for instant visibility -->
+            <p id="xdr-subtitle" class="text-center text-xl text-gray-400 mb-12 transition-all duration-1000 ease-out delay-100">
+                Extreme Dynamic Range (XDR). Unbelievable details.
+            </p>
+        </div>
+        
+        <!-- Sticky container for the animation --><div id="sticky-scene-display" class="sticky top-0 h-screen flex items-center justify-center">
+            <div class="w-full max-w-7xl px-4">
+                <div class="w-full bg-gray-900 rounded-3xl p-6 md:p-12 border border-gray-800">
+                    
+                    <!-- Element to be scaled/zoomed --><div id="xdr-display-img"
+                         class="w-full h-64 sm:h-96 rounded-2xl relative overflow-hidden bg-cover bg-center"
+                         style="background-image: url('https://4kwallpapers.com/images/wallpapers/apple-pro-display-xdr-stock-liquid-1920x1080-316.jpg');">
+                        <!-- Overlay to ensure text readability --><div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <p id="xdr-title" class="text-3xl font-bold text-white z-10 opacity-0 transition-opacity duration-300">Liquid Retina XDR Display</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats that fade in at the end of the scroll --><div id="xdr-stats" class="grid md:grid-cols-3 gap-8 mt-10 text-center opacity-0 transition-opacity duration-500">
+                        <div>
+                            <p class="text-4xl font-bold text-apple-blue mb-2">1,000,000:1</p>
+                            <p class="text-gray-400">Contrast Ratio</p>
+                        </div>
+                        <div>
+                            <p class="text-4xl font-bold text-apple-blue mb-2">120Hz</p>
+                            <p class="text-gray-400">ProMotion Technology</p>
+                        </div>
+                        <div>
+                            <p class="text-4xl font-bold text-apple-blue mb-2">1,600 nits</p>
+                            <p class="text-gray-400">Peak Brightness</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Footer --><footer class="bg-apple-dark py-10 px-4 mt-16">
+        <div class="max-w-7xl mx-auto border-t border-gray-700 pt-8">
+            <p class="text-sm text-gray-500 mb-4">
+                1. Battery life claims depend on device settings, usage, and many other factors. See apple.com/batteries for more information.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-between text-xs text-gray-500">
+                <p>Copyright © 2024 Apple Inc. All rights reserved.</p>
+                <div class="flex space-x-4 mt-2 sm:mt-0">
+                    <a href="#" class="hover:text-gray-300">Privacy Policy</a>
+                    <a href="#" class="hover:text-gray-300">Terms of Use</a>
+                    <a href="#" class="hover:text-gray-300">Sales and Refunds</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Scroll Interactivity --><script>
+        // --- State variables for performance and completion tracking ---
+        // Removed cinematicCompleted and displayCompleted to allow two-way scrolling.
+        
+        // rAF variables
+        let lastScrollY = 0;
+        let ticking = false;
+
+        // --- Element References ---
+        const header = document.getElementById('mainHeader');
+        // M5 Cinematic
+        const cinematicContainer = document.getElementById('scroll-cinematic-container');
+        const zoomingImageContainer = document.getElementById('zooming-image-container');
+        const sloganTextWrapper = document.getElementById('slogan-text-wrapper');
+        // XDR Cinematic
+        const displayContainer = document.getElementById('scroll-display-container');
+        const displayImage = document.getElementById('xdr-display-img');
+        const displayMainTitle = document.getElementById('xdr-main-title'); 
+        const displaySubtitle = document.getElementById('xdr-subtitle');   
+        const displayTitle = document.getElementById('xdr-title'); // Title inside sticky
+        const displayStats = document.getElementById('xdr-stats');
+
+
+        // --- 1. Core Animation Logic (Runs inside requestAnimationFrame) ---
+        function updateAnimations() {
+            const scrollPosition = lastScrollY; // Use the latest scroll position recorded
+
+            // --- Header logic (Kept inside rAF for visual sync with scroll) ---
+            if (header) {
+                if (scrollPosition > 50) {
+                    header.classList.add('bg-black');
+                    header.classList.remove('bg-black/80');
+                } else {
+                    header.classList.remove('bg-black');
+                    header.classList.add('bg-black/80');
+                }
+            }
+            
+            // --- Cinematic Scroll Logic (M5 Chip) ---
+            if (cinematicContainer && zoomingImageContainer && sloganTextWrapper) {
+                const startScroll = cinematicContainer.offsetTop;
+                const endScroll = startScroll + cinematicContainer.offsetHeight - window.innerHeight;
+
+                // Check if the scroll position is within the animation range
+                if (scrollPosition >= startScroll && scrollPosition <= endScroll) {
+                    let progress = (scrollPosition - startScroll) / (endScroll - startScroll);
+                    
+                    // Image Scale: Zooms from 2.5 down to 1.0 (Completed over 50% of scroll)
+                    const zoomProgress = Math.min(1, progress / 0.5); 
+                    const startScale = 2.5;
+                    const endScale = 1.0;
+                    // Using cubic easing for a smooth deceleration
+                    const easeProgress = 3 * zoomProgress ** 2 - 2 * zoomProgress ** 3;
+                    const currentScale = startScale - (startScale - endScale) * easeProgress;
+                    
+                    // Apply scale and explicit hardware acceleration (translateZ(0))
+                    zoomingImageContainer.style.transform = `scale(${currentScale}) translateZ(0)`;
+                    
+                    // Image Fade In: Fades from 0 to 1 (Completed over 10% of scroll)
+                    const imageFadeProgress = Math.min(1, progress / 0.1); 
+                    zoomingImageContainer.style.opacity = imageFadeProgress; 
+
+                    // Slogan Text Fade In/Move Up (Starts at 70% and ends at 100%)
+                    const fadeStart = 0.7;
+                    const sloganOpacity = Math.max(0, Math.min(1, (progress - fadeStart) / (1.0 - fadeStart)));
+                    
+                    sloganTextWrapper.style.opacity = sloganOpacity;
+                    
+                    // TranslateY for text motion (no HWA needed for simple 2D transform)
+                    const textY = 20 * (1 - sloganOpacity);
+                    sloganTextWrapper.style.transform = `translateY(${textY}px)`;
+                } 
+                else if (scrollPosition < startScroll) { // Before the section
+                    // Initial state with hardware acceleration enabled
+                    zoomingImageContainer.style.transform = 'scale(2.5) translateZ(0)';
+                    zoomingImageContainer.style.opacity = 0;
+                    sloganTextWrapper.style.opacity = 0;
+                    sloganTextWrapper.style.transform = 'translateY(20px)';
+                }
+                else { // scrollPosition > endScroll (After the section)
+                    // Final state (scale 1.0, opacity 1) with hardware acceleration enabled
+                    zoomingImageContainer.style.transform = 'scale(1) translateZ(0)';
+                    zoomingImageContainer.style.opacity = 1;
+                    sloganTextWrapper.style.opacity = 1;
+                    sloganTextWrapper.style.transform = 'translateY(0)';
+                }
+            }
+            
+            // --- Cinematic Scroll Logic (XDR Display) ---
+            if (displayContainer && displayImage && displayTitle && displayStats && displayMainTitle && displaySubtitle) {
+                const startScroll = displayContainer.offsetTop;
+                const endScroll = startScroll + displayContainer.offsetHeight - window.innerHeight;
+                
+                // *** LOGIC REMOVED: displayMainTitle and displaySubtitle are now permanently visible. ***
+                
+                // Cinematic Effect Logic (Image/Stats - Inside the sticky box)
+                // Check if the scroll position is within the animation range
+                if (scrollPosition >= startScroll && scrollPosition <= endScroll) {
+                    let progress = (scrollPosition - startScroll) / (endScroll - startScroll);
+
+                    // 1. Image Scale: Zooms OUT from 1.5 down to 1.0
+                    const startScale = 1.5;
+                    const endScale = 1.0;
+                    const zoomProgress = Math.min(1, progress / 0.8); 
+                    const currentScale = startScale - (startScale - endScale) * zoomProgress;
+                    
+                    // Apply scale and explicit hardware acceleration (translateZ(0))
+                    displayImage.style.transform = `scale(${currentScale}) translateZ(0)`;
+
+                    // 2. Title Fade In: Fades in during the first 20%
+                    const titleFadeProgress = Math.min(1, progress / 0.2); 
+                    displayTitle.style.opacity = titleFadeProgress;
+
+                    // 3. Stats Fade In: Fades in during the last 20%
+                    const statsFadeStart = 0.8;
+                    const statsOpacity = Math.max(0, Math.min(1, (progress - statsFadeStart) / (1.0 - statsFadeStart)));
+                    
+                    displayStats.style.opacity = statsOpacity;
+                } 
+                else if (scrollPosition < startScroll) { // Before the section
+                    // Initial state with hardware acceleration enabled
+                    displayImage.style.transform = 'scale(1.5) translateZ(0)';
+                    displayTitle.style.opacity = 0;
+                    displayStats.style.opacity = 0;
+                }
+                else { // scrollPosition > endScroll (After the section)
+                    // Final state with hardware acceleration enabled
+                    displayImage.style.transform = 'scale(1.0) translateZ(0)';
+                    displayTitle.style.opacity = 1;
+                    displayStats.style.opacity = 1;
+                }
+            }
+            
+            // Critical step: Reset the ticking flag once the DOM updates are complete
+            ticking = false;
+        }
+
+        // --- 2. Request Animation Frame Helper ---
+        function requestTick() {
+            if (!ticking) {
+                requestAnimationFrame(updateAnimations);
+                ticking = true;
+            }
+        }
+
+        // --- 3. Scroll Event Listener (Only records position and requests a tick) ---
+        // CRITICAL FIX: Use { passive: true } to prevent the browser from waiting for this JS event handler, 
+        // ensuring native scrolling is never blocked and eliminating micro-lag.
+        window.addEventListener('scroll', () => {
+            lastScrollY = window.scrollY;
+            requestTick();
+        }, { passive: true }); // <--- Passive listener implemented here
+
+        // --- 4. Initialization ---
+        window.addEventListener('load', () => {
+            const elements = [
+                'heroSubtitle', 'heroTitle', 'heroH2', 'heroActions', 'heroImage'
+            ];
+            
+            elements.forEach((id, index) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    // Standard hero section fade-in animation
+                    setTimeout(() => {
+                        el.classList.remove('opacity-0', 'translate-y-10', 'translate-y-4');
+                    }, index * 100);
+                }
+            });
+            
+            // Ensure initial scroll state is calculated and rendered via rAF
+            lastScrollY = window.scrollY;
+            requestTick();
+        });
+
+        // --- 5. Intersection Observer for standard fade-in sections ---
+        const fadeObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                // We keep the observer logic for the rest of the elements (like the M4/M4 Max cards)
+                if (['scroll-cinematic-container', 'scroll-display-container', 'xdr-main-title', 'xdr-subtitle'].includes(entry.target.id)) {
+                    return; 
+                }
+                if (entry.isIntersecting) {
+                    entry.target.classList.remove('opacity-0', 'translate-y-12');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            rootMargin: '0px 0px -100px 0px',
+            threshold: 0.1
+        });
+
+        document.querySelectorAll('[data-animate]').forEach(el => {
+            fadeObserver.observe(el);
+        });
+
+    </script>
+</body>
+</html>
